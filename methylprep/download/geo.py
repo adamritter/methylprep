@@ -145,7 +145,6 @@ def geo_download(geo_id, series_path, geo_platforms, clean=True, decompress=True
         LOGGER.info(f"Downloaded {geo_id} without decompressing")
     else:
         LOGGER.info(f"Downloaded and unpacked {geo_id}")
-    ftp.quit()
     if ftp:
         ftp.quit()
 
