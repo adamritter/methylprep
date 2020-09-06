@@ -309,7 +309,7 @@ def run_pipeline(data_dir, array_type=None, export=False, manifest_filepath=None
             LOGGER.info(f"saved {pkl_name}")
 
         # consolidating data_containers this will break with really large sample sets, so skip here.
-        if batch_size and batch_size >= 200:
+        if batch_size and batch_size >= 50:
             continue
         data_containers.extend(batch_data_containers)
 
@@ -355,7 +355,7 @@ def run_pipeline(data_dir, array_type=None, export=False, manifest_filepath=None
 
 
     # batch processing done; consolidate and return data. This uses much more memory, but not called if in batch mode.
-    if batch_size and batch_size >= 200:
+    if batch_size and batch_size >= 50:
         print("Because the batch size was >200 samples, files are saved but no data objects are returned.")
         if save_control:
             print("Cannot save control probes if batch size >200 samples.")
