@@ -217,6 +217,19 @@ notes:
         print(f"Found {len(samples)} samples and dropped {len(raw.columns) - len(samples)} meta data columns.")
     return df
 
+def pd_read_big_csv(filepath, max_cols=1000, **kwargs):
+    header=pd.read_csv(filepath, nrows=10, **kwargs)
+    ncols=len(header.columns)
+    if ncols <= max_cols:
+        return pd.read_csv(filepath, **kwargs)
+    r=[]
+    for i in range((ncols + max_cols - 1) // max_cols):
+        maxcol=(i+1)*max_cols
+        if maxcol >= ncols:
+            maxcol = ncols-1
+        r.append(pd.read_csv(filepath, usecols=range(i*max_cols, maxcol), **kwargs))
+    return pd.concat(r)
+
 
 def read_geo(filepath, verbose=False, debug=False, as_beta=True, column_pattern=None, test_only=False, rename_probe_column=True, decimals=3):
     """Use to load preprocessed GEO data into methylcheck. Attempts to find the sample beta/M_values
@@ -261,7 +274,7 @@ notes:
 
     def pd_load(filepath, **kwargs):
         if '.csv' in this.suffixes:
-            raw = pd.read_csv(this, **kwargs)
+            raw = pd_read_big_csv(this, **kwargs)
         elif '.xlsx' in this.suffixes:
             raw = pd.read_excel(this, **kwargs)
         elif '.pkl' in this.suffixes:
@@ -269,7 +282,7 @@ notes:
             #return raw
         elif '.txt' in this.suffixes:
             try:
-                raw = pd.read_csv(this, sep='\t', **kwargs)
+                raw = pd_read_big_csv(this, sep='\t', **kwargs)
             except ParserError as e:
                 if debug: print(f"{e}: look at file and deleted few header rows first.")
                 raw = pd.read_csv(this, **kwargs)
