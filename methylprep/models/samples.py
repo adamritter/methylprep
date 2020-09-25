@@ -167,7 +167,7 @@ Keyword Arguments:
                 # Note: both patterns will be identical if GSM_ID missing from sample sheet.
                 alt_file_matches = list(Path(self.data_dir).rglob(alt_filename))
                 if (not alt_file_matches) and allow_compressed:
-                    alt_file_matches = list(Path(self.data_dir).rglob(alt_filename + '.gz'))
+                    alt_file_matches = list(Path(self.data_dir).rglob(alt_filename + '.gz'))                
                 if len(alt_file_matches) > 1:
                     LOGGER.warning(f'Multiple ({len(alt_file_matches)}) files matched {alt_file_pattern} -- saved path to first one: {alt_file_matches[0]}')
                 if len(alt_file_matches) > 0:

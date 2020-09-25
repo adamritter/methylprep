@@ -114,8 +114,11 @@ def process_series(id, path, seen_platforms, batch_size, **kwargs):
                 make_sample_sheet=kwargs.get('make_sample_sheet',False),
                 meta_data_frame=kwargs.get('meta_data_frame',False)
                 ) #make_sample_sheet handled within miniml.py logic
+
+            ''' # v1.3.x auto-consolidates, so no need for this function to run.
             dfs = []
             betas_list = list(Path(data_dir).glob('beta_values_*.pkl'))
+
             #for i in range(1,len(betas_list) + 1):
                 #df = pd.read_pickle(f"beta_values_{i}.pkl")
             for beta in betas_list:
@@ -124,16 +127,19 @@ def process_series(id, path, seen_platforms, batch_size, **kwargs):
             if len(dfs) > 1:
                 LOGGER.info(f"Concatenating {len(betas_list)} beta_value files.")
                 joined_df = pd.concat(dfs, axis=1)
-            else:
+            elif len(dfs) == 1:
                 joined_df = dfs[0]
+            else:
+                return
 
             joined_df.to_pickle(Path(path,platform,f"{id}_beta_values.pkl"))
             for beta in betas_list:
                 os.remove(beta)
             LOGGER.info(f"Consolidated {id} {platform} samples; saved to {id}_beta_values.pkl")
+            '''
 
 
-def run_series_list(list_file, path, dict_only=False, batch_size=BATCH_SIZE):
+def run_series_list(list_file, path, dict_only=False, batch_size=BATCH_SIZE, **kwargs):
     """Downloads the IDATs and metadata for a list of series, creating metadata dictionaries and dataframes of sample beta_values
 
     Arguments:
@@ -151,22 +157,25 @@ def run_series_list(list_file, path, dict_only=False, batch_size=BATCH_SIZE):
             By default is set to the constant 100."""
     path = str(path)
 
-    if not os.path.exists(f"{path}/{PLATFORMS[0]}_beta_values"):
-        initialize(str(path))
+    #if not os.path.exists(f"{path}/{PLATFORMS[0]}_beta_values"):
+    #    initialize(str(path))
 
     try:
         fp = open(f"{path}/{str(list_file)}", 'r')
     except FileNotFoundError:
-        LOGGER.error("""Specify your list of GEO series IDs to download using a text file in the folder where data should be saved. Put one ID on each line""")
+        LOGGER.error("""Specify your list of GEO series IDs to download using a text file in the folder where data should be saved. Put one ID on each line.""")
         return
     for series_id in fp:
+        series_id = series_id.strip()
+        series_path = Path(path, series_id) # run_series and geo_download get confused if idats already present, so this avoids that confusion
         try:
-            LOGGER.info(f"Running {series_id.strip()}")
-            run_series(series_id.strip(), path, dict_only=dict_only, batch_size=batch_size)
+            series_path.mkdir()
+            LOGGER.info(f"Running {series_id}")
+            run_series(series_id, series_path, dict_only=dict_only, batch_size=batch_size, **kwargs)
         except (ValueError, FileNotFoundError) as e:
-            LOGGER.info(f"Error with {series_id.strip()}: {e}")
+            LOGGER.info(f"Error with {series_id}: {e}")
             with open("problem_series.txt", "a+") as fp:
-                fp.write(f"{series_id.strip()} ({e})\n")
+                fp.write(f"{series_id} ({e})\n")
             fp.close()
 
 
@@ -247,7 +256,7 @@ def get_attachment_info(geo_id):
                     'link': filelink,
                 })
     except Exception as e:
-        print(f"Error parsing file data: {e}")
+        LOGGER.error(f"Error parsing file data: {e}")
     return info
 
 
